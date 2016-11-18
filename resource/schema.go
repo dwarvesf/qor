@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/qor/qor"
+	"github.com/dwarvesf/qor"
 )
 
 func convertMapToMetaValues(values map[string]interface{}, metaors []Metaor) (*MetaValues, error) {

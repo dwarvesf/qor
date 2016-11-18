@@ -4,8 +4,8 @@ import (
 	"errors"
 	"reflect"
 
+	"github.com/dwarvesf/qor"
 	"github.com/jinzhu/gorm"
-	"github.com/qor/qor"
 	"github.com/qor/roles"
 )
 

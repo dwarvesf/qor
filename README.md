@@ -45,7 +45,7 @@ QOR is not a "boxed turnkey solution". You need proper coding skills to use it. 
 ## Live DEMO
 
 * Live Demo [http://demo.getqor.com/admin](http://demo.getqor.com/admin)
-* Source Code of Live Demo [https://github.com/qor/qor-example](https://github.com/qor/qor-example)
+* Source Code of Live Demo [https://github.com/dwarvesf/qor-example](https://github.com/dwarvesf/qor-example)
 
 ## Frontend Development
 

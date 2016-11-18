@@ -11,9 +11,9 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/dwarvesf/qor"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/now"
-	"github.com/qor/qor"
 
 	"strings"
 )

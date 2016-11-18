@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/dwarvesf/qor"
+	"github.com/dwarvesf/qor/utils"
 	"github.com/jinzhu/gorm"
-	"github.com/qor/qor"
-	"github.com/qor/qor/utils"
 	"github.com/qor/roles"
 )
 
