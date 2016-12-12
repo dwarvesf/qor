@@ -34,6 +34,7 @@ type ConfigureResourceInterface interface {
 // Resource is a struct that including basic definition of qor resource
 type Resource struct {
 	Name            string
+	Title           string
 	Value           interface{}
 	FindManyHandler func(interface{}, *qor.Context) error
 	FindOneHandler  func(interface{}, *MetaValues, *qor.Context) error
