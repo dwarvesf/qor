@@ -286,6 +286,11 @@ func (meta *Meta) Initialize() error {
 						field.Set(utils.NewValue(field.Type()).Elem())
 					}
 
+					if utils.ToString(value) == "" {
+						field.Set(reflect.Zero(field.Type()))
+						return
+					}
+
 					for field.Kind() == reflect.Ptr {
 						field = field.Elem()
 					}
@@ -327,6 +332,8 @@ func (meta *Meta) Initialize() error {
 								if newTime, err := utils.ParseTime(str, context); err == nil {
 									field.Set(reflect.ValueOf(newTime))
 								}
+							} else {
+								field.Set(reflect.Zero(field.Type()))
 							}
 						} else {
 							var buf = bytes.NewBufferString("")
