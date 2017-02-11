@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/dwarvesf/qor"
+	"github.com/xlab/handysort"
 )
 
 func convertMapToMetaValues(values map[string]interface{}, metaors []Metaor) (*MetaValues, error) {
@@ -83,7 +84,6 @@ func ConvertFormToMetaValues(request *http.Request, metaors []Metaor, prefix str
 	for _, metaor := range metaors {
 		metaorsMap[metaor.GetName()] = metaor
 	}
-
 	newMetaValue := func(key string, value interface{}) {
 		if strings.HasPrefix(key, prefix) {
 			var metaValue *MetaValue
@@ -101,7 +101,6 @@ func ConvertFormToMetaValues(request *http.Request, metaors []Metaor, prefix str
 					if metaor != nil {
 						metaors = metaor.GetMetas()
 					}
-
 					if children, err := ConvertFormToMetaValues(request, metaors, prefix+name+"."); err == nil {
 						nestedName := prefix + matches[2]
 						if _, ok := nestedStructIndex[nestedName]; ok {
@@ -124,7 +123,10 @@ func ConvertFormToMetaValues(request *http.Request, metaors []Metaor, prefix str
 	for key := range request.Form {
 		sortedFormKeys = append(sortedFormKeys, key)
 	}
-	sort.Strings(sortedFormKeys)
+
+	// sort.Strings(sortedFormKeys)
+	// dwarvesf need to custom this to make index 0 -> 1 -> 10 instead of 0 -> 10 -> 1
+	sort.Sort(handysort.Strings(sortedFormKeys))
 
 	for _, key := range sortedFormKeys {
 		newMetaValue(key, request.Form[key])
@@ -135,7 +137,8 @@ func ConvertFormToMetaValues(request *http.Request, metaors []Metaor, prefix str
 		for key := range request.MultipartForm.File {
 			sortedFormKeys = append(sortedFormKeys, key)
 		}
-		sort.Strings(sortedFormKeys)
+		// sort.Strings(sortedFormKeys)
+		sort.Sort(handysort.Strings(sortedFormKeys))
 
 		for _, key := range sortedFormKeys {
 			newMetaValue(key, request.MultipartForm.File[key])
