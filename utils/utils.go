@@ -241,8 +241,19 @@ var GetLocale = func(context *qor.Context) string {
 //     utils.ParseTime = func(timeStr string, context *qor.Context) (time.Time, error) {
 //         // ....
 //     }
-var ParseTime = func(timeStr string, context *qor.Context) (time.Time, error) {
-	return now.Parse(timeStr)
+var ParseTime = func(timeStr string, context *qor.Context) (t time.Time, err error) {
+	if t, err = now.Parse(timeStr); err != nil {
+		timeSlice := strings.Split(timeStr, "-")
+		// try with format 02-01-2006
+		if len(timeSlice[0]) == 2 {
+			tmp := timeSlice[0]
+			timeSlice[0] = timeSlice[2]
+			timeSlice[2] = tmp
+			timeStr = strings.Join(timeSlice, "-")
+			t, err = now.Parse(timeStr)
+		}
+	}
+	return
 }
 
 // FormatTime format time to string
