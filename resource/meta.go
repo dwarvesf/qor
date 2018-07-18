@@ -10,8 +10,8 @@ import (
 
 	"github.com/dwarvesf/qor"
 	"github.com/dwarvesf/qor/utils"
-	"github.com/jinzhu/gorm"
 	"github.com/dwarvesf/roles"
+	"github.com/jinzhu/gorm"
 	"github.com/qor/validations"
 )
 
@@ -195,11 +195,6 @@ func (meta *Meta) Initialize() error {
 func setupValuer(meta *Meta, fieldName string, record interface{}) {
 	nestedField := strings.Contains(fieldName, ".")
 
-<<<<<<< HEAD
-				if f, ok := scope.FieldByName(fieldName); ok {
-					if f.Relationship != nil && f.Field.CanAddr() && !scope.PrimaryKeyZero() {
-						context.GetDB().Model(value).Order("id asc").Related(f.Field.Addr().Interface(), meta.FieldName)
-=======
 	// Setup nested fields
 	if nestedField {
 		fieldNames := strings.Split(fieldName, ".")
@@ -226,7 +221,6 @@ func setupValuer(meta *Meta, fieldName string, record interface{}) {
 						}
 
 						context.GetDB().Model(value).Related(f.Field.Addr().Interface(), fieldName)
->>>>>>> upstream/master
 					}
 				}
 
