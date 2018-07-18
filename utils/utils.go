@@ -15,11 +15,8 @@ import (
 	"sort"
 	"time"
 
-<<<<<<< HEAD
 	"github.com/dwarvesf/qor"
-=======
 	"github.com/gosimple/slug"
->>>>>>> upstream/master
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
