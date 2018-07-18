@@ -9,7 +9,6 @@ import (
 
 	"github.com/dwarvesf/qor"
 	"github.com/dwarvesf/qor/utils"
-	"github.com/xlab/handysort"
 )
 
 func convertMapToMetaValues(values map[string]interface{}, metaors []Metaor) (*MetaValues, error) {
@@ -137,13 +136,9 @@ func ConvertFormToMetaValues(request *http.Request, metaors []Metaor, prefix str
 		sortedFormKeys = append(sortedFormKeys, key)
 	}
 
-<<<<<<< HEAD
 	// sort.Strings(sortedFormKeys)
 	// dwarvesf need to custom this to make index 0 -> 1 -> 10 instead of 0 -> 10 -> 1
-	sort.Sort(handysort.Strings(sortedFormKeys))
-=======
 	utils.SortFormKeys(sortedFormKeys)
->>>>>>> upstream/master
 
 	for _, key := range sortedFormKeys {
 		newMetaValue(key, request.Form[key])
@@ -154,12 +149,7 @@ func ConvertFormToMetaValues(request *http.Request, metaors []Metaor, prefix str
 		for key := range request.MultipartForm.File {
 			sortedFormKeys = append(sortedFormKeys, key)
 		}
-<<<<<<< HEAD
-		// sort.Strings(sortedFormKeys)
-		sort.Sort(handysort.Strings(sortedFormKeys))
-=======
 		utils.SortFormKeys(sortedFormKeys)
->>>>>>> upstream/master
 
 		for _, key := range sortedFormKeys {
 			newMetaValue(key, request.MultipartForm.File[key])
