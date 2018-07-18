@@ -5,10 +5,10 @@ import (
 	"io"
 	"net/http"
 	"regexp"
-	"sort"
 	"strings"
 
 	"github.com/dwarvesf/qor"
+	"github.com/dwarvesf/qor/utils"
 	"github.com/xlab/handysort"
 )
 
@@ -91,7 +91,7 @@ func ConvertFormToMetaValues(request *http.Request, metaors []Metaor, prefix str
 
 			if matches := isCurrentLevel.FindStringSubmatch(key); len(matches) > 0 {
 				name := matches[0]
-				metaValue = &MetaValue{Name: name, Value: value, Meta: metaorsMap[name]}
+				metaValue = &MetaValue{Name: name, Meta: metaorsMap[name], Value: value}
 			} else if matches := isNextLevel.FindStringSubmatch(key); len(matches) > 0 {
 				name := matches[1]
 				if _, ok := convertedNextLevel[name]; !ok {
@@ -104,11 +104,24 @@ func ConvertFormToMetaValues(request *http.Request, metaors []Metaor, prefix str
 					if children, err := ConvertFormToMetaValues(request, metaors, prefix+name+"."); err == nil {
 						nestedName := prefix + matches[2]
 						if _, ok := nestedStructIndex[nestedName]; ok {
-							nestedStructIndex[nestedName] += 1
+							nestedStructIndex[nestedName]++
 						} else {
 							nestedStructIndex[nestedName] = 0
 						}
-						metaValue = &MetaValue{Name: matches[2], Meta: metaor, MetaValues: children, Index: nestedStructIndex[nestedName]}
+
+						// is collection
+						if matches[3] != "" {
+							metaValue = &MetaValue{Name: matches[2], Meta: metaor, MetaValues: children, Index: nestedStructIndex[nestedName]}
+						} else {
+							// is nested and it is existing
+							if metaValue = metaValues.Get(matches[2]); metaValue == nil {
+								metaValue = &MetaValue{Name: matches[2], Meta: metaor, MetaValues: children, Index: nestedStructIndex[nestedName]}
+							} else {
+								metaValue.MetaValues = children
+								metaValue.Index = nestedStructIndex[nestedName]
+								metaValue = nil
+							}
+						}
 					}
 				}
 			}
@@ -124,9 +137,13 @@ func ConvertFormToMetaValues(request *http.Request, metaors []Metaor, prefix str
 		sortedFormKeys = append(sortedFormKeys, key)
 	}
 
+<<<<<<< HEAD
 	// sort.Strings(sortedFormKeys)
 	// dwarvesf need to custom this to make index 0 -> 1 -> 10 instead of 0 -> 10 -> 1
 	sort.Sort(handysort.Strings(sortedFormKeys))
+=======
+	utils.SortFormKeys(sortedFormKeys)
+>>>>>>> upstream/master
 
 	for _, key := range sortedFormKeys {
 		newMetaValue(key, request.Form[key])
@@ -137,8 +154,12 @@ func ConvertFormToMetaValues(request *http.Request, metaors []Metaor, prefix str
 		for key := range request.MultipartForm.File {
 			sortedFormKeys = append(sortedFormKeys, key)
 		}
+<<<<<<< HEAD
 		// sort.Strings(sortedFormKeys)
 		sort.Sort(handysort.Strings(sortedFormKeys))
+=======
+		utils.SortFormKeys(sortedFormKeys)
+>>>>>>> upstream/master
 
 		for _, key := range sortedFormKeys {
 			newMetaValue(key, request.MultipartForm.File[key])

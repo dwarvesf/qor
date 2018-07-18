@@ -2,17 +2,24 @@ package utils
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"reflect"
+	"regexp"
 	"runtime"
 	"runtime/debug"
+	"sort"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/dwarvesf/qor"
+=======
+	"github.com/gosimple/slug"
+>>>>>>> upstream/master
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
@@ -20,10 +27,42 @@ import (
 	"strings"
 )
 
+// AppRoot app root path
+var AppRoot, _ = os.Getwd()
+
+// ContextKey defined type used for context's key
+type ContextKey string
+
+// ContextDBName db name used for context
+var ContextDBName ContextKey = "ContextDB"
+
+// HTMLSanitizer html sanitizer to avoid XSS
 var HTMLSanitizer = bluemonday.UGCPolicy()
 
 func init() {
 	HTMLSanitizer.AllowStandardAttributes()
+	if path := os.Getenv("WEB_ROOT"); path != "" {
+		AppRoot = path
+	}
+}
+
+// GOPATH return GOPATH from env
+func GOPATH() []string {
+	paths := strings.Split(os.Getenv("GOPATH"), string(os.PathListSeparator))
+	if len(paths) == 0 {
+		fmt.Println("GOPATH doesn't exist")
+	}
+	return paths
+}
+
+// GetDBFromRequest get database from request
+var GetDBFromRequest = func(req *http.Request) *gorm.DB {
+	db := req.Context().Value(ContextDBName)
+	if tx, ok := db.(*gorm.DB); ok {
+		return tx
+	}
+
+	return nil
 }
 
 // HumanizeString Humanize separates string based on capitalizd letters
@@ -45,11 +84,16 @@ func isUppercase(char byte) bool {
 	return 'A' <= char && char <= 'Z'
 }
 
+var asicsiiRegexp = regexp.MustCompile("^(\\w|\\s|-|!)*$")
+
 // ToParamString replaces spaces and separates words (by uppercase letters) with
 // underscores in a string, also downcase it
 // e.g. ToParamString -> to_param_string, To ParamString -> to_param_string
 func ToParamString(str string) string {
-	return gorm.ToDBName(strings.Replace(str, " ", "_", -1))
+	if asicsiiRegexp.MatchString(str) {
+		return gorm.ToDBName(strings.Replace(str, " ", "_", -1))
+	}
+	return slug.Make(str)
 }
 
 // PatchURL updates the query part of the request url.
@@ -92,7 +136,11 @@ func JoinURL(originalURL string, paths ...interface{}) (joinedURL string, err er
 		urlPaths = append(urlPaths, fmt.Sprint(p))
 	}
 
-	u.Path = path.Join(urlPaths...)
+	if strings.HasSuffix(strings.Join(urlPaths, ""), "/") {
+		u.Path = path.Join(urlPaths...) + "/"
+	} else {
+		u.Path = path.Join(urlPaths...)
+	}
 
 	joinedURL = u.String()
 	return
@@ -126,13 +174,15 @@ func Stringify(object interface{}) string {
 	scope := gorm.Scope{Value: object}
 	for _, column := range []string{"Name", "Title", "Code"} {
 		if field, ok := scope.FieldByName(column); ok {
-			result := field.Field.Interface()
-			if valuer, ok := result.(driver.Valuer); ok {
-				if result, err := valuer.Value(); err == nil {
-					return fmt.Sprint(result)
+			if field.Field.IsValid() {
+				result := field.Field.Interface()
+				if valuer, ok := result.(driver.Valuer); ok {
+					if result, err := valuer.Value(); err == nil {
+						return fmt.Sprint(result)
+					}
 				}
+				return fmt.Sprint(result)
 			}
-			return fmt.Sprint(result)
 		}
 	}
 
@@ -263,4 +313,95 @@ var ParseTime = func(timeStr string, context *qor.Context) (t time.Time, err err
 //     }
 var FormatTime = func(date time.Time, format string, context *qor.Context) string {
 	return date.Format(format)
+}
+
+var replaceIdxRegexp = regexp.MustCompile(`\[\d+\]`)
+
+// SortFormKeys sort form keys
+func SortFormKeys(strs []string) {
+	sort.Slice(strs, func(i, j int) bool { // true for first
+		str1 := strs[i]
+		str2 := strs[j]
+		matched1 := replaceIdxRegexp.FindAllStringIndex(str1, -1)
+		matched2 := replaceIdxRegexp.FindAllStringIndex(str2, -1)
+
+		for x := 0; x < len(matched1); x++ {
+			prefix1 := str1[:matched1[x][0]]
+			prefix2 := str2
+
+			if len(matched2) >= x+1 {
+				prefix2 = str2[:matched2[x][0]]
+			}
+
+			if prefix1 != prefix2 {
+				return strings.Compare(prefix1, prefix2) < 0
+			}
+
+			if len(matched2) < x+1 {
+				return false
+			}
+
+			number1 := str1[matched1[x][0]:matched1[x][1]]
+			number2 := str2[matched2[x][0]:matched2[x][1]]
+
+			if number1 != number2 {
+				if len(number1) != len(number2) {
+					return len(number1) < len(number2)
+				}
+				return strings.Compare(number1, number2) < 0
+			}
+		}
+
+		return strings.Compare(str1, str2) < 0
+	})
+}
+
+// GetAbsURL get absolute URL from request, refer: https://stackoverflow.com/questions/6899069/why-are-request-url-host-and-scheme-blank-in-the-development-server
+func GetAbsURL(req *http.Request) url.URL {
+	var result url.URL
+
+	if req.URL.IsAbs() {
+		return *req.URL
+	}
+
+	if domain := req.Header.Get("Origin"); domain != "" {
+		parseResult, _ := url.Parse(domain)
+		result = *parseResult
+	}
+
+	result.Parse(req.RequestURI)
+	return result
+}
+
+// Indirect returns last value that v points to
+func Indirect(v reflect.Value) reflect.Value {
+	for v.Kind() == reflect.Ptr {
+		v = reflect.Indirect(v)
+	}
+	return v
+}
+
+// SliceUniq removes duplicate values in given slice
+func SliceUniq(s []string) []string {
+	for i := 0; i < len(s); i++ {
+		for i2 := i + 1; i2 < len(s); i2++ {
+			if s[i] == s[i2] {
+				// delete
+				s = append(s[:i2], s[i2+1:]...)
+				i2--
+			}
+		}
+	}
+	return s
+}
+
+// SafeJoin safe join https://snyk.io/research/zip-slip-vulnerability#go
+func SafeJoin(paths ...string) (string, error) {
+	result := path.Join(paths...)
+
+	// check filepath
+	if strings.HasPrefix(strings.TrimLeft(result, "/"), paths[0]) {
+		return result, nil
+	}
+	return "", errors.New("invalid filepath")
 }
